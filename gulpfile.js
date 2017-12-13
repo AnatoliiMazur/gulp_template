@@ -11,8 +11,12 @@ var gulp           = require('gulp'),
 		cache          = require('gulp-cache'),
 		autoprefixer   = require('gulp-autoprefixer'),
 		ftp            = require('vinyl-ftp'),
-		notify         = require("gulp-notify"),
-		rsync          = require('gulp-rsync');
+		notify         = require('gulp-notify'),
+		rsync          = require('gulp-rsync'),
+		pug            = require('gulp-pug'),
+		pugBeautify    = require('gulp-pug-beautify'),
+		postcss        = require('gulp-postcss'),
+		plumber        = require('gulp-plumber');
 
 // Пользовательские скрипты проекта
 
@@ -37,7 +41,8 @@ gulp.task('build', ['removedist', 'imagemin', 'sass', 'js'], function() {
 gulp.task('common-js', function() {
 	return gulp.src([
 		'app/js/common.js'
-		])
+	])
+	.pipe(plumber())
 	.pipe(concat('common.min.js'))
 	.pipe(uglify())
 	.pipe(gulp.dest('app/js'));
@@ -47,7 +52,8 @@ gulp.task('js', ['common-js'], function() {
 	return gulp.src([
 		'app/libs/jquery/dist/jquery.min.js',
 		'app/js/common.min.js' // Всегда в конце
-		])
+	])
+	.pipe(plumber())
 	.pipe(concat('scripts.min.js'))
 	// .pipe(uglify()) // Минимизировать весь js (на выбор)
 	.pipe(gulp.dest('app/js'))
@@ -66,16 +72,34 @@ gulp.task('browser-sync', function() {
 });
 
 gulp.task('sass', function() {
+	var processors = [];
 	return gulp.src('app/sass/**/*.sass')
 	.pipe(sass({outputStyle: 'expand'}).on("error", notify.onError()))
 	.pipe(rename({suffix: '.min', prefix : ''}))
-	.pipe(autoprefixer(['last 15 versions']))
+	.pipe(autoprefixer(['last 2 versions']))
 	.pipe(cleanCSS()) // Опционально, закомментировать при отладке
+	.pipe(postcss(processors))
 	.pipe(gulp.dest('app/css'))
-	.pipe(browserSync.reload({stream: true}));
+	.pipe(browserSync.reload({stream: true}))
 });
 
-gulp.task('watch', ['sass', 'js', 'browser-sync'], function() {
+gulp.task('pug', function(){
+	return gulp.src('app/pug/*.pug')
+	.pipe(plumber())
+	.pipe(pug({
+		pretty: true
+	}))
+	.pipe(pugBeautify({
+		// omit_empty_lines:   true,
+		fill_tab:           true,
+		tab_size:           2
+	}))
+	.pipe(gulp.dest('app'))
+	.pipe(browserSync.reload({stream: true}))
+});
+
+gulp.task('watch', ['pug', 'sass', 'js', 'browser-sync'], function() {
+	gulp.watch('app/pug/**/*.pug', ['pug']);
 	gulp.watch('app/sass/**/*.sass', ['sass']);
 	gulp.watch(['libs/**/*.js', 'app/js/common.js'], ['js']);
 	gulp.watch('app/*.html', browserSync.reload);
@@ -84,7 +108,7 @@ gulp.task('watch', ['sass', 'js', 'browser-sync'], function() {
 gulp.task('imagemin', function() {
 	return gulp.src('app/img/**/*')
 	.pipe(cache(imagemin())) // Cache Images
-	.pipe(gulp.dest('dist/img')); 
+	.pipe(gulp.dest('dist/img'));
 });
 
 gulp.task('deploy', function() {
@@ -96,8 +120,8 @@ gulp.task('deploy', function() {
 		log: gutil.log
 	});
 	var globs = [
-	'dist/**',
-	'dist/.htaccess'
+		'dist/**',
+		'dist/.htaccess'
 	];
 	return gulp.src(globs, {buffer: false})
 	.pipe(conn.dest('/path/to/folder/on/server'));
@@ -117,7 +141,7 @@ gulp.task('rsync', function() {
 	}));
 });
 
-gulp.task('removedist', function() { return del.sync('dist'); });
-gulp.task('clearcache', function () { return cache.clearAll(); });
+gulp.task('removedist', function() { return del.sync('dist')});
+gulp.task('clearcache', function () { return cache.clearAll()});
 
 

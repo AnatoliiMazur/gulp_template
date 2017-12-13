@@ -56,6 +56,8 @@ body
 
 .testfont
 	p
+		background-color: black
+		display: flex
 		&::before
 			left: -50px
 			font-size: 50px
@@ -71,7 +73,5 @@ body
 			font-weight: 600
 			&::before
 				@include before-mi('\e84d')
-
-
 
 @import "media" // Всегда в конце
