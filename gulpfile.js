@@ -9,18 +9,42 @@ var gulp           = require('gulp'),
 		del            = require('del'),
 		imagemin       = require('gulp-imagemin'),
 		cache          = require('gulp-cache'),
-		autoprefixer   = require('gulp-autoprefixer'),
 		ftp            = require('vinyl-ftp'),
 		notify         = require('gulp-notify'),
 		rsync          = require('gulp-rsync'),
 		pug            = require('gulp-pug'),
 		pugBeautify    = require('gulp-pug-beautify'),
 		postcss        = require('gulp-postcss'),
-		plumber        = require('gulp-plumber');
+		plumber        = require('gulp-plumber'),
+		autoprefixer   = require('autoprefixer'),
+		sourcemaps     = require('gulp-sourcemaps'),
+		cleancss       = require('postcss-clean'),
+		nested         = require('postcss-nested'),
+		nesting        = require('postcss-nesting');
 
 // Пользовательские скрипты проекта
 
 gulp.task('default', ['watch']);
+
+gulp.task('sass', function() {
+	var processors = [
+		// nested,
+		// nesting,
+		// cleancss,
+		autoprefixer({
+			browsers: ['> 1%', 'last 3 versions', 'Firefox ESR', 'Opera 12.1', 'Safari 7']
+		})
+	];
+	return gulp.src('app/sass/**/*.sass')
+	.pipe(sourcemaps.init())
+	.pipe(sass({outputStyle: 'expand'}).on("error", notify.onError()))
+	.pipe(rename({suffix: '.min', prefix : ''}))
+	.pipe(cleanCSS()) // Опционально, закомментировать при отладке
+	.pipe(postcss(processors))
+	.pipe(sourcemaps.write('.'))
+	.pipe(gulp.dest('app/css'))
+	.pipe(browserSync.reload({stream: true}))
+});
 
 gulp.task('build', ['removedist', 'imagemin', 'sass', 'js'], function() {
 	var buildFiles = gulp.src([
@@ -69,18 +93,6 @@ gulp.task('browser-sync', function() {
 		// tunnel: true,
 		// tunnel: "projectmane", //Demonstration page: http://projectmane.localtunnel.me
 	});
-});
-
-gulp.task('sass', function() {
-	var processors = [];
-	return gulp.src('app/sass/**/*.sass')
-	.pipe(sass({outputStyle: 'expand'}).on("error", notify.onError()))
-	.pipe(rename({suffix: '.min', prefix : ''}))
-	.pipe(autoprefixer(['last 2 versions']))
-	.pipe(cleanCSS()) // Опционально, закомментировать при отладке
-	.pipe(postcss(processors))
-	.pipe(gulp.dest('app/css'))
-	.pipe(browserSync.reload({stream: true}))
 });
 
 gulp.task('pug', function(){
