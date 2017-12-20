@@ -3,7 +3,6 @@
 @import "vars"
 @import "_mixins/mixins"
 
-
 *
 	-webkit-box-sizing: border-box
 	-moz-box-sizing: border-box
@@ -39,7 +38,6 @@ body textarea:required:valid
 html, body
 	height: 100%
 
-
 body
 	font-size: 16px
 	min-width: 320px
@@ -59,6 +57,8 @@ body
 		background-color: black
 		display: flex
 		border-radius: 11em
+		@include media-breakpoint-down(xs)
+			display: none
 		&::before
 			left: -50px
 			font-size: 50px
@@ -75,8 +75,6 @@ body
 			&::before
 				@include before-mi('\e84d')
 
-
-
 ul
 	display: block
 li
@@ -85,14 +83,68 @@ a
 	display: block
 p
 	display: block
+	@include media-breakpoint-down(md)
+		color: red
+	@include media-breakpoint-up(lg)
+		color: green
+
+.header
+	background-color: #111
+	@include media-breakpoint-down(xl)
+	
 
 
+//@include media-breakpoint-up(xs)
+//	.header
+//		background-color: yellow
+//
+//@include media-breakpoint-up(sm)
+//	.header
+//		background-color: green
+//
+//@include media-breakpoint-up(md)
+//	.header
+//		background-color: red
+//
+//@include media-breakpoint-up(lg)
+//	.header
+//		background-color: blue
+//
+//@include media-breakpoint-up(xl)
+//	.header
+//		background-color: indigo
 
 
+@include media-breakpoint-down(xs)
+	.header
+		background-color: yellow
 
+@include media-breakpoint-down(sm)
+	.header
+		background-color: green
 
+@include media-breakpoint-down(md)
+	.header
+		background-color: red
 
+@include media-breakpoint-down(lg)
+	.header
+		background-color: blue
 
+@include media-breakpoint-down(xl)
+	.header
+		background-color: indigo
+		@include media-breakpoint-down(lg)
+		@include media-breakpoint-down(xs)
+		
 
-
-@import "media" // Всегда в конце
+//
+//
+//@include media-breakpoint-up(md)
+//	.header
+//		background-color: red
+//
+//
+//@include media-breakpoint-down(sm)
+//	.header
+//		background-color: green

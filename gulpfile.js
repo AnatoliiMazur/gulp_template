@@ -4,7 +4,6 @@ var gulp           = require('gulp'),
 		browserSync    = require('browser-sync'),
 		concat         = require('gulp-concat'),
 		uglify         = require('gulp-uglify'),
-		cleanCSS       = require('gulp-clean-css'),
 		rename         = require('gulp-rename'),
 		del            = require('del'),
 		imagemin       = require('gulp-imagemin'),
@@ -18,28 +17,53 @@ var gulp           = require('gulp'),
 		plumber        = require('gulp-plumber'),
 		autoprefixer   = require('autoprefixer'),
 		sourcemaps     = require('gulp-sourcemaps'),
-		cleancss       = require('postcss-clean'),
-		nested         = require('postcss-nested'),
-		nesting        = require('postcss-nesting');
+		cssnano        = require('cssnano')({preset: 'default'}),
+		mqpacker       = require('css-mqpacker'),
+		sortCSSmq      = require('sort-css-media-queries');
 
 // Пользовательские скрипты проекта
 
 gulp.task('default', ['watch']);
 
+gulp.task('pug', function(){
+	// return gulp.src('app/pug/**/*.pug')
+	return gulp.src('app/pug/pages/!(_)*.pug')
+	.pipe(plumber())
+	.pipe(pug({
+		pretty: true
+	}))
+	.pipe(pugBeautify({
+		// omit_empty_lines:   true,
+		fill_tab:           true,
+		tab_size:           2
+	}))
+	.pipe(gulp.dest('app'))
+	.pipe(browserSync.reload({stream: true}))
+});
+
+gulp.task('watch', ['pug', 'sass', 'js', 'browser-sync'], function() {
+	global.watch = true;
+	gulp.watch('app/pug/**/*.pug', ['pug']);
+	gulp.watch('app/sass/**/*.sass', ['sass']);
+	gulp.watch(['libs/**/*.js', 'app/js/common.js'], ['js']);
+	gulp.watch('app/*.html', browserSync.reload);
+});
+
 gulp.task('sass', function() {
 	var processors = [
-		// nested,
-		// nesting,
-		// cleancss,
 		autoprefixer({
-			browsers: ['> 1%', 'last 3 versions', 'Firefox ESR', 'Opera 12.1', 'Safari 7']
+			browsers: ['> 1%', 'last 2 versions']
+		}),
+		// cssnano,
+		mqpacker({
+			// sort: sortCSSmq           // mobile -first
+			sort: sortCSSmq.desktopFirst // desktop-first
 		})
 	];
 	return gulp.src('app/sass/**/*.sass')
 	.pipe(sourcemaps.init())
-	.pipe(sass({outputStyle: 'expand'}).on("error", notify.onError()))
+	.pipe(sass().on("error", notify.onError()))
 	.pipe(rename({suffix: '.min', prefix : ''}))
-	.pipe(cleanCSS()) // Опционально, закомментировать при отладке
 	.pipe(postcss(processors))
 	.pipe(sourcemaps.write('.'))
 	.pipe(gulp.dest('app/css'))
@@ -93,28 +117,6 @@ gulp.task('browser-sync', function() {
 		// tunnel: true,
 		// tunnel: "projectmane", //Demonstration page: http://projectmane.localtunnel.me
 	});
-});
-
-gulp.task('pug', function(){
-	return gulp.src('app/pug/*.pug')
-	.pipe(plumber())
-	.pipe(pug({
-		pretty: true
-	}))
-	.pipe(pugBeautify({
-		// omit_empty_lines:   true,
-		fill_tab:           true,
-		tab_size:           2
-	}))
-	.pipe(gulp.dest('app'))
-	.pipe(browserSync.reload({stream: true}))
-});
-
-gulp.task('watch', ['pug', 'sass', 'js', 'browser-sync'], function() {
-	gulp.watch('app/pug/**/*.pug', ['pug']);
-	gulp.watch('app/sass/**/*.sass', ['sass']);
-	gulp.watch(['libs/**/*.js', 'app/js/common.js'], ['js']);
-	gulp.watch('app/*.html', browserSync.reload);
 });
 
 gulp.task('imagemin', function() {
